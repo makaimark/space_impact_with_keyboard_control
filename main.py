@@ -25,51 +25,73 @@ def number_of_lifes(screen, ship):
         life = pygame.transform.scale(life, (500, 500))
         return life
 
-
-def main():
+def music_player():
     pygame.mixer.init()
     sound = pygame.mixer.Sound('sound.wav')
     sound.play(-1)
 
-    # Define some colors
-    BLACK = (0, 0, 0)
-    WHITE = (255, 255, 255)
-    GREEN = (0, 255, 0)
-    RED = (255, 0, 0)
-
-    pygame.init()
-
-    # Set the width and height of the screen [width, height]
-    size = (1280, 1024)
-    screen = pygame.display.set_mode(size)
-    enemy_list = pygame.sprite.Group()
-
-    # Loop until the user clicks the close button.
-    done = False
-
-
-    # Used to manage how fast the screen updates
-    clock = pygame.time.Clock()
-
-    ship = spaceship.SpaceShip()
-
-    shiprect = ship.getrect()
-    pygame.key.set_repeat(1, 40)
-    bullet_list = []
-    delay = 250000
-    last_shot = datetime.datetime.now()
+def main():
 
     def spawn_enemy(default):
         for i in range(default):
             enemy = Enemy()
-            enemy.rect.x = random.randrange(1000,size[0])
-            enemy.rect.y = random.randrange(50 , size[1] -50)
+            enemy.rect.x = random.randrange(1000, size[0])
+            enemy.rect.y = random.randrange(50, size[1] - 50)
             enemy_list.add(enemy)
 
-    number_of_lifes(screen, ship)
+    def init():
+        BLACK = (0, 0, 0)
+        size = (1280, 1024)     # Set the width and height of the screen [width, height]
+        screen = pygame.display.set_mode(size)
+        enemy_list = pygame.sprite.Group()
+        music_player()
+        pygame.init()
+        bullet_list = []
+        clock = pygame.time.Clock()         # Used to manage how fast the screen updates
+        ship = spaceship.SpaceShip()
+        shiprect = ship.getrect()
+        pygame.key.set_repeat(1, 40)
+        delay = 250000
+        last_shot = datetime.datetime.now()
+        number_of_lifes(screen, ship)
+        return (BLACK, size, screen, enemy_list, bullet_list, clock, ship, shiprect, delay, last_shot)
+
+    BLACK, size, screen, enemy_list, bullet_list, clock, ship, shiprect, delay, last_shot = init()
 
     # -------- Main Program Loop -----------
-    while not done:
+    while ship.life != 0:
+
+        def iterate_bullet_list(bullet_list):
+            for bull in bullet_list:
+                if bull.x_coordinate > 1260:
+                    bullet_list.remove(bull)
+                    continue
+                bulletrect = (bull.x_coordinate, bull.y_coordinate - 5)
+                bull.bullet_mover()
+                screen.blit(bull.image, bulletrect)
+
+        def check_if_bullet_shot_ship(enemy_list):
+            for enemy in enemy_list:
+                if enemy.rect.colliderect(shiprect):
+                    ship.life -= 1
+                    enemy_list.remove(enemy)
+
+        def check_enemy_death(enemy_list):
+            for enemy in enemy_list:
+                for bull in bullet_list:
+                    if enemy.rect.colliderect((bull.x_coordinate, bull.y_coordinate, 30, 10)):
+                        bullet_list.remove(bull)
+                        enemy_list.remove(enemy)
+                        continue
+
+        def check_number_of_enemies(level, enemy_list):
+            if len(enemy_list) <= 5:
+                spawn_enemy(level * 5)
+                level += 1
+
+        # If you want a background image, replace this clear with blit'ing the
+        # background image.
+        screen.fill(BLACK)
 
         level = 2
         # --- Main event loop
@@ -87,41 +109,22 @@ def main():
                 else:
                     shiprect = ship.event_handler(event, shiprect)
 
-
-
-        # If you want a background image, replace this clear with blit'ing the
-        # background image.
-        screen.fill(BLACK)
         enemy_list.update()
         enemy_list.draw(screen)
 
         screen.blit(ship.image, shiprect)
         screen.blit(number_of_lifes(screen, ship), (0, 0))
 
+        # move and remove all bullet objects
+        iterate_bullet_list(bullet_list)
 
-        for bull in bullet_list:
-            if bull.x_coordinate > 1260:
-                bullet_list.remove(bull)
-                continue
-            bulletrect = (bull.x_coordinate, bull.y_coordinate-5)
-            bull.bullet_mover()
-            screen.blit(bull.image, bulletrect)
+        # check if a bullet shot the ship
+        check_if_bullet_shot_ship(enemy_list)
 
-        for enemy in enemy_list:
-            if enemy.rect.colliderect(shiprect):
-                ship.life -= 1
-                enemy_list.remove(enemy)
+        # iterate thwough list of the enemies, and check if we shot them down
+        check_enemy_death(enemy_list)
 
-        for enemy in enemy_list:
-            for bull in bullet_list:
-                if enemy.rect.colliderect((bull.x_coordinate, bull.y_coordinate, 30, 10)):
-                    bullet_list.remove(bull)
-                    enemy_list.remove(enemy)
-                    continue
-
-        if len(enemy_list) <= 5:
-            spawn_enemy(level * 5)
-            level += 1
+        check_number_of_enemies(level, enemy_list)
 
         '''if ship.life == 0:
             time.sleep(5)
