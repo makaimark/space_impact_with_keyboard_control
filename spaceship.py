@@ -4,6 +4,7 @@ import pygame
 class SpaceShip:
     life = 3
     image = pygame.image.load("media_files/spaceship.bmp")
+    highscore = 0
 
     def event_handler(self, event, shiprect):
         if event.key == pygame.K_LEFT:
