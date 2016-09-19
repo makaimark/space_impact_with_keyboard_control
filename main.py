@@ -1,9 +1,13 @@
-import pygame
-import spaceship
-import bullet
 import datetime
-from enemy import Enemy
 import random
+import time
+
+import pygame
+
+import bullet
+import spaceship
+from enemy import Enemy
+# import menu
 
 pygame.init()
 
@@ -27,7 +31,6 @@ def music_player():
 
 
 def main():
-
 
     def spawn_enemy(default):
         for i in range(default):
@@ -141,6 +144,8 @@ def main():
 
         if ship.life == 0:
             game_over(screen)
+            time.sleep(5)
+            exit()
 
 
         # --- Go ahead and update the screen with what we've drawn.
@@ -151,5 +156,5 @@ def main():
     # Close the window and quit.
     pygame.quit()
 
-if __name__ == "__main__":
-    main()
+
+# main()
